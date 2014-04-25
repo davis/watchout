@@ -5,5 +5,8 @@ Feel free to use it if you like. */
 
 .enemy{
   fill:black;
-  r:30;
+}
+
+.hero{
+  fill:blue;
 }
