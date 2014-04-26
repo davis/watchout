@@ -32,6 +32,40 @@ enemies.enter().append('circle')
     // set attr y to '            height  '
     .attr('cy', function() {return Math.random()*(height-20)+10;});
 
+
+function collision(enemy) {
+  // calculate diff between hero's x and enemy's x
+  var diffX = hero[0][0].getAttribute('cx') - enemy.getAttribute('cx');
+  //                  ""           y and enemy's y
+  var diffY = hero[0][0].getAttribute('cy') - enemy.getAttribute('cy');
+  // calculate distance between hero and enemy using pythagorean theorem
+  var diff = Math.sqrt(Math.pow(diffX, 2) + Math.pow(diffY, 2));
+  // calcuate sum of hero's radius and enemy radius (max dist before collision)
+  var maxDistBeforeCollision = parseFloat(hero[0][0].getAttribute('r')) + parseFloat(enemy.getAttribute('r'));
+  // if distance between hero and enemy < max dist before collision
+  if(diff < maxDistBeforeCollision) {
+  //   call collided(), reset score, etc
+    console.log('boom!');
+  }
+}
+
+setInterval(function(){
+  for(var i = 0; i < enemies[0].length; i++) {
+    collision(enemies[0][i]);
+  }
+}, 50);
+
+
+
+
+
+
+
+
+
+
+
+
 var drag = d3.behavior.drag()
   .on('dragstart', dragstart)
   .on('drag', dragged)
