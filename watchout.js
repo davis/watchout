@@ -3,7 +3,14 @@
 // set width and height
 var width = 960;
 var height = 500;
+
+// set number of enemies
 var numberOfEnemies = 30;
+
+// set userScore
+var userScore = 0;
+var highScore = 0;
+var collisions = 0;
 
 // append an svg to the body
 var svg = d3.select('body').append('svg')
@@ -45,11 +52,23 @@ function collision(enemy) {
   // if distance between hero and enemy < max dist before collision
   if(diff < maxDistBeforeCollision) {
   //   call collided(), reset score, etc
+    // check for new high score
+    if(userScore > highScore) {
+      highScore = userScore;
+      d3.select('.high span').text(highScore);
+    }
+    userScore = 0;
+    collisions++;
+    d3.select('.collisions span').text(collisions);
     console.log('boom!');
+
   }
 }
 
 setInterval(function(){
+  //increment and update score
+  userScore += 10;
+  d3.select('.current span').text(userScore);
   for(var i = 0; i < enemies[0].length; i++) {
     collision(enemies[0][i]);
   }
