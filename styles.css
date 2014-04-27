@@ -3,10 +3,63 @@
 /* Note: an asteroid image is included in this repo.
 Feel free to use it if you like. */
 
+
+
+body{
+  background-color: white;
+  font-family: 'Montserrat', 'sans-serif';
+}
+
+h1, p{
+  text-align:center;
+}
+
+svg{
+  border: 5px dashed gray;
+  margin: 0 auto;
+}
+
+.game{
+  margin: 0 auto;
+  width:970px;
+}
+
+.scoreboard{
+  height:60px;
+  width:70%;
+  margin:0 auto;
+  text-align:center;
+}
+
+.high{
+  height:30px;
+}
+
+.current{
+  height:30px;
+}
+
+.collisions{
+  display:none;
+}
+
+@-webkit-keyframes rotation{
+    from {-webkit-transform: rotate(0deg);}
+    to   {-webkit-transform: rotate(360deg);}
+}
+
+.boss{
+  -webkit-transform-origin: 50% 50%;
+  -webkit-animation: rotation 0.5s infinite linear;
+  fill:red;
+}
+
 .enemy{
-  fill:black;
+  -webkit-transform-origin: 50% 50%;
+  -webkit-animation: rotation 0.5s infinite linear
 }
 
 .hero{
   fill:blue;
 }
+

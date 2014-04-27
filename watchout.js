@@ -1,124 +1,206 @@
-// start slingin' some d3 here.
-
 // set width and height
-var width = 960;
-var height = 500;
+var width = 960,
+    height = 500;
 
-// set number of enemies
-var numberOfEnemies = 30;
+// set number of enemies and boss speed
+var numberOfEnemies = 10;
+var bossSpeed = 0;
 
-// set userScore
-var userScore = 0;
-var highScore = 0;
-var collisions = 0;
+// set user score, high score, and collisions
+var userScore = 0,
+    highScore = 0,
+    collisions = 0;
 
 // append an svg to the body
-var svg = d3.select('body').append('svg')
+var svg = d3.select('.game').append('svg')
     .attr('width', width)
     .attr('height', height)
-  .append('g');
+  .append('g')
 
-// good guy/hero
+// append enemies
+var enemies = svg.selectAll('.enemy')
+  .data(generateCoordinates(numberOfEnemies, width, height))
+    .enter().append('image')
+      .attr('class', 'enemy')
+      .attr('xlink:href', 'shuriken.png')
+      .attr('width', '25')
+      .attr('height', '25')
+      .attr('x', function(d){return d[0];}) // set attr x to Math.random()*width of svg element
+      .attr('y', function(d){return d[1];}); // set attr y to Math.random()*height of svg element
+
+// append boss
+var boss = svg.append('rect')
+  .data(generateCoordinates(1, width, height))
+      .attr('class', 'boss')
+      .attr('width', '0')
+      .attr('height', '0')
+      .attr('x', function(d){return d[0];}) // set attr x to Math.random()*width of svg element
+      .attr('y', function(d){return d[1];}) // set attr y to Math.random()*height of svg element
+    // .transition()
+    //   .delay(5000)
+          .attr('width', '45')
+          .attr('height', '45');
+
+// append good guy/hero with drag functionality
 var hero = svg.append('circle')
     .attr('class', 'hero')
     .attr('draggable', true)
     .attr('r', 10)
     .attr('cx', width/2)
-    .attr('cy', height/2);
+    .attr('cy', height/2)
+    .attr('z-index', 1000)
+  .call(d3.behavior.drag()
+    .on('dragstart', dragstart)
+    .on('drag', dragging)
+    .on('dragend', dragend));
 
-// add a certain number of enemies (circles)
-var enemies = svg.selectAll('.enemy')
-  .data(new Array(numberOfEnemies));
+// update enemy positions every 1.5 seconds
+setInterval(function(){
+  update(generateCoordinates(numberOfEnemies, width, height));
+}, 1500);
 
-// use enter().append() to add these enemies to the svg
-enemies.enter().append('circle')
-    .attr('class', 'enemy')
-    .attr('r', 10)
-    // set attr x to Math.random()*width of svg element
-    .attr('cx', function() {return Math.random()*(width-20)+10;})
-    // set attr y to '            height  '
-    .attr('cy', function() {return Math.random()*(height-20)+10;});
+// increment score, move boss, and check for collisions
+d3.timer(function(){
+  updateBoss(getBossCoordinates(hero, boss));
+  keepScore();
+  checkCollisions(hero, enemies, boss, collision);
+  bossSpeed = bossSpeed + 0.1;
+});
 
+// functions ========================================
 
-function collision(enemy) {
-  // calculate diff between hero's x and enemy's x
-  var diffX = hero[0][0].getAttribute('cx') - enemy.getAttribute('cx');
-  //                  ""           y and enemy's y
-  var diffY = hero[0][0].getAttribute('cy') - enemy.getAttribute('cy');
-  // calculate distance between hero and enemy using pythagorean theorem
-  var diff = Math.sqrt(Math.pow(diffX, 2) + Math.pow(diffY, 2));
-  // calcuate sum of hero's radius and enemy radius (max dist before collision)
-  var maxDistBeforeCollision = parseFloat(hero[0][0].getAttribute('r')) + parseFloat(enemy.getAttribute('r'));
-  // if distance between hero and enemy < max dist before collision
-  if(diff < maxDistBeforeCollision) {
-  //   call collided(), reset score, etc
-    // check for new high score
-    if(userScore > highScore) {
-      highScore = userScore;
-      d3.select('.high span').text(highScore);
-    }
-    userScore = 0;
-    collisions++;
-    d3.select('.collisions span').text(collisions);
-    console.log('boom!');
+// score stuff
+function keepScore() {
+  userScore += 1;
+  d3.select('.current span').text(userScore);
 
+  // if user score goes past high score, color it green
+  if(userScore >= +d3.select('.high span').text()) {
+    d3.select('.current span')
+        .style("color", 'green')
+  } else {
+    d3.select('.current span')
+        .style("color", 'black')
   }
 }
 
-setInterval(function(){
-  //increment and update score
-  userScore += 10;
-  d3.select('.current span').text(userScore);
-  for(var i = 0; i < enemies[0].length; i++) {
-    collision(enemies[0][i]);
+// check collisions
+function checkCollisions(hero, enemies, boss, callback) {
+  var heroX = +hero.attr('cx');
+  var heroY = +hero.attr('cy');
+  var heroR = +hero.attr('r');
+
+  var bossX = +boss.attr('x');
+  var bossY = +boss.attr('y');
+  var bossR = +boss.attr('width')/2;
+
+  var enemy, enemyX, enemyY, diffX, diffY, diff, collisionDist;
+
+  // enemy collision detection
+  enemies.each(function() {
+    enemy = d3.select(this);
+    collisionDist = heroR + (+enemy.attr('width')/2);
+    enemyX = enemy.attr('x');
+    enemyY = enemy.attr('y');
+    diffX = heroX - enemyX;
+    diffY = heroY - enemyY;
+    diff = Math.sqrt(Math.pow(diffX,2) + Math.pow(diffY,2));
+    if(diff < collisionDist) {
+      callback();
+    }
+  });
+  // boss collision detection
+  collisionDist = heroR + bossR;
+  diffX = heroX - bossX;
+  diffY = heroY - bossY;
+  diff = Math.sqrt(Math.pow(diffX,2) + Math.pow(diffY,2));
+  if(diff < collisionDist) {
+    callback();
   }
-}, 50);
+}
 
+// run when there is a collision
+function collision() {
+  if(userScore >= highScore) {
+    highScore = userScore;
 
+// new high score!
+    d3.select('.high span')
+          .style("opacity", 1e-6)
+          .style("color", 'blue')
+          .style("font-size", "24px")
+          .text(highScore)
+      .transition()
+        .duration(750)
+          .style("opacity", 1)
+      .transition()
+        .delay(2500)
+          .style("font-size", "16px")
+          .style("color", 'black');
+  }
+  userScore = 0;
+  bossSpeed = 0;
+  collisions++;
+  d3.select('.collisions span').text(collisions);
+}
 
+// generate array of random coordinates (used for enemies)
+function generateCoordinates(n, w, h) {
+  var arrayOfCoordinates = [];
+  for(var i = 0; i < n; i++) {
+    arrayOfCoordinates.push([Math.random()*(w-20)+10, Math.random()*(h-20)+10]);
+  }
+  return arrayOfCoordinates;
+}
 
+// update enemy positions
+function update(data) {
+  enemies.data(data)
+    .transition()
+      .duration(1500)
+      // .ease('linear')
+    .attr('x', function(d){return d[0];})
+    .attr('y', function(d){return d[1];});
+}
 
+// get new boss coordinates
+function getBossCoordinates(hero, boss) {
+  var heroX = +hero.attr('cx');
+  var heroY = +hero.attr('cy');
 
+  var bossX = +boss.attr('x');
+  var bossY = +boss.attr('y');
 
+  var diffX = heroX - bossX - +boss.attr('width')/2;
+  var diffY = heroY - bossY - +boss.attr('height')/2;
 
+  var ratio = bossSpeed/Math.sqrt((Math.pow(diffX, 2) + Math.pow(diffY,2)));
 
+  return [[bossX + ratio*diffX, bossY + ratio*diffY]];
+}
 
+// update boss
+function updateBoss(data) {
+  boss.data(data)
+    .transition().ease('linear')
+  .attr('x', function(d){return d[0];})
+  .attr('y', function(d){return d[1];});
+}
 
-
-var drag = d3.behavior.drag()
-  .on('dragstart', dragstart)
-  .on('drag', dragged)
-  .on('dragend', dragend);
-d3.selectAll('.hero').call(drag);
-
+// drag helper functions =====
 function dragstart() {
   d3.event.sourceEvent.stopPropagation();
   d3.select(this).classed('dragging', true);
 }
 
-function dragged() {
+// ensures hero cannot escape the box!
+function dragging() {
   d3.select(this)
-    .attr('cx', d3.event.x)
-    .attr('cy', d3.event.y)
+    .attr('cx', function(){return Math.max(Math.min(width-hero.attr('r'),d3.event.x), hero.attr('r'));})
+    .attr('cy', function(){return Math.max(Math.min(height-hero.attr('r'),d3.event.y), hero.attr('r'));})
 }
 
 function dragend() {
   d3.select(this).classed('dragging', false);
 }
 
-
-
-
-
-
-
-
-function update(data) {
-  enemies
-    .transition()
-      .duration(1000)
-    .attr('cx', function() {return Math.random()*(width-20)+10;})
-    .attr('cy', function() {return Math.random()*(height-20)+10;});
-}
-
-setInterval(update, 1500);
