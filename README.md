@@ -2,7 +2,5 @@
 
 Watchout is a game that serves as an introduction to d3js (which is awesome).
 
-This is a copy of the work I did on a private repo, originally a project from
-[Hack Reactor's](http://hackreactor.com) curriculum. This project was worked
-on with a pair; it's representative of the kind of problems that I've tackled,
-but not of my solo work.
+#How to play:
+Avoid the shurikens and the red boss. The boss comes after you and speeds up as time goes on. Your score resets every time you collide with a shuriken or the boss.
